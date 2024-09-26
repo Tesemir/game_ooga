@@ -18,9 +18,13 @@ int entry(int argc, char **argv) {
 	while (!window.should_close) {
 		reset_temporary_storage();
 
+
+		draw_frame.view = m4_make_scale(v3(1.0/5.3, 1.0/5.3, 1.0));
+
 		float64 now = os_get_elapsed_seconds();
 		float64 delta_t = now - last_time;
 		last_time = now;
+
 
 		if (is_key_just_pressed(KEY_ESCAPE)) {
 			window.should_close = true;
@@ -41,11 +45,11 @@ int entry(int argc, char **argv) {
 		}
 		input_axis = v2_normalize(input_axis);
 
-		player_pos = v2_add(player_pos, v2_mulf(input_axis, 150.0 * delta_t));
+		player_pos = v2_add(player_pos, v2_mulf(input_axis, 50.0 * delta_t));
 
 		Matrix4 xform = m4_scalar(1.0);
 		xform         = m4_translate(xform, v3(player_pos.x, player_pos.y, 0));
-		draw_image_xform(player, xform, v2(55, 55), COLOR_RED);
+		draw_image_xform(player, xform, v2(6.0, 8.0), COLOR_RED);
 
 		
 		os_update(); 
