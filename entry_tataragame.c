@@ -19,7 +19,7 @@ int entry(int argc, char **argv) {
 		reset_temporary_storage();
 
 
-		draw_frame.view = m4_make_scale(v3(1.0/5.3, 1.0/5.3, 1.0));
+		draw_frame.camera_xform = m4_make_scale(v3(1.0/5.3, 1.0/5.3, 1.0));
 
 		float64 now = os_get_elapsed_seconds();
 		float64 delta_t = now - last_time;
@@ -62,7 +62,6 @@ int entry(int argc, char **argv) {
 			frame_count = 0;
 		}
 	}
-
 
 	return 0;
 }
