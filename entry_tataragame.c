@@ -79,6 +79,27 @@ void entity_destroy(Entity* entity) {
 	memset(entity, 0, sizeof(Entity));
 }
 
+Vector2 screen_to_world() {
+	float mouseX = input_frame.mouse_x;
+	float mouseY = input_frame.mouse_y;
+	Matrix4 projection = draw_frame.projection;
+	Matrix4 view = draw_frame.camera_xform;
+	float window_width = window.width;
+	float window_height = window.height;
+	
+	float ndcX = (mouseX / (window_width * 0.5f)) - 1.0f;
+	float ndcY = (mouseY / (window_height * 0.5f)) - 1.0f;
+
+	Vector4 ndc_pos = v4(ndcX, ndcY, 0, 1);
+
+	Matrix4 inv_proj = m4_inverse(projection);
+
+	Vector4 clip_pos = m4_transform(inv_proj, ndc_pos);
+	Vector4 world_pos = m4_transform(view, clip_pos);
+
+	return (Vector2) {world_pos.x, world_pos.y};
+}
+
 void setup_rock(Entity *en) {
 	en->arch = arch_rock;
 	en->sprite_id = SPRITE_rock0;
@@ -128,6 +149,11 @@ int entry(int argc, char **argv) {
 	float zoom = 5.3;
 	Vector2 camera_pos = v2(0, 0);
 
+	Gfx_Font *font = load_font_from_disk(STR("C:/windows/fonts/arial.ttf"), get_heap_allocator());
+	assert(font, "Failed loading arial.ttf");
+
+	const u32 font_height = 48;
+
 	while (!window.should_close) {
 		reset_temporary_storage();
 		float64 now = os_get_elapsed_seconds();
@@ -137,16 +163,38 @@ int entry(int argc, char **argv) {
 		
 		draw_frame.projection = m4_make_orthographic_projection(window.width * -0.5, window.width * 0.5, window.height * -0.5, window.height * 0.5, -1, 10);
 
-		// Camera
+		// :Camera
 		{
 			Vector2 target_pos = player_en->pos;
-			animate_v2_to_target(&camera_pos, target_pos, delta_t, 15.0f);
+			animate_v2_to_target(&camera_pos, target_pos, delta_t, 10.0f);
 
 			draw_frame.camera_xform = m4_scalar(1.0);
 			draw_frame.camera_xform = m4_mul(draw_frame.camera_xform, m4_make_translation(v3(camera_pos.x, camera_pos.y, 0)));
 			draw_frame.camera_xform = m4_mul(draw_frame.camera_xform, m4_make_scale(v3(1.0/zoom, 1.0/zoom, 1.0)));
-		} 
+		}
 
+		{
+			Vector2 mouse_pos = screen_to_world();
+
+			for (int i = 0; i < MAX_ENTITY_COUNT; i++) {
+				Entity* en = &world->entities[i];
+				if (en->is_valid) {
+					Sprite* sprite = get_sprite(en->sprite_id);
+					Range2f bounds = range2f_make_bottom_center(sprite->size);
+					bounds = range2f_shift(bounds, en->pos);
+
+					Vector4 col = COLOR_WHITE;
+					col.a = 0.4;
+					if (range2f_contains(bounds, mouse_pos)) {
+						col.a = 1.0;
+					}
+
+					draw_rect(bounds.min, range2f_size(bounds), col);
+				}
+			}
+		}
+
+		// :Render
 		for (int i = 0; i < MAX_ENTITY_COUNT; i++) {
 			Entity* en = &world->entities[i];
 			if (en->is_valid) {
@@ -157,7 +205,7 @@ int entry(int argc, char **argv) {
 
 						Matrix4 xform = m4_scalar(1.0);
 						xform         = m4_translate(xform, v3(en->pos.x, en->pos.y, 0));
-						xform         = m4_translate(xform, v3(sprite->size.x * -0.5, sprite->size.y * -0.5, 0));
+						xform         = m4_translate(xform, v3(sprite->size.x * -0.5, 0, 0));
 						draw_image_xform(sprite->image, xform, sprite->size, COLOR_WHITE);
 						break;
 					}
