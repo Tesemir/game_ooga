@@ -309,6 +309,7 @@ typedef u8 bool;
 #include "path_utils.c"
 #include "utility.c"
 #include "linmath.c"
+#include "range.c"
 
 #include "hash_table.c"
 #include "growing_array.c"
